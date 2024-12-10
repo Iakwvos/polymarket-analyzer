@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polymarket Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .card {
+            background-color: #2d2d2d;
+            border: 1px solid #3d3d3d;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .trader-card {
+            cursor: pointer;
+        }
+        .trust-score {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00ff88;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+        }
+        .score-component {
+            font-size: 14px;
+            color: #a0a0a0;
+        }
+        .table {
+            color: #ffffff;
+        }
+        .table thead th {
+            background-color: #3d3d3d;
+            border-color: #4d4d4d;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        .table tbody td {
+            border-color: #4d4d4d;
+        }
+        .btn-custom {
+            background-color: #00ff88;
+            color: #1a1a1a;
+            border: none;
+            transition: all 0.2s;
+        }
+        .btn-custom:hover {
+            background-color: #00cc6a;
+            transform: scale(1.05);
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            background-color: #00ff88;
+            color: #1a1a1a;
+            display: none;
+            z-index: 1000;
+            animation: slideIn 0.5s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .score-bar {
+            height: 4px;
+            background-color: #3d3d3d;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .score-fill {
+            height: 100%;
+            background-color: #00ff88;
+            transition: width 0.3s ease;
+        }
+        .stats-card {
+            text-align: center;
+            padding: 20px;
+        }
+        .stats-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #00ff88;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+        }
+        .stats-label {
+            color: #a0a0a0;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .table-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border-radius: 8px;
+            background-color: #2d2d2d;
+        }
+        .control-panel {
+            background-color: #2d2d2d;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+        .badge-buy {
+            background-color: #00ff88;
+            color: #1a1a1a;
+        }
+        .badge-sell {
+            background-color: #ff4444;
+            color: #ffffff;
+        }
+        .hidden-row {
+            display: none;
+        }
+        .load-more {
+            width: 100%;
+            padding: 10px;
+            background-color: #3d3d3d;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            margin-top: 10px;
+            transition: background-color 0.2s;
+        }
+        .load-more:hover {
+            background-color: #4d4d4d;
+        }
+        .signal-card {
+            background-color: #2d2d2d;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .signal-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .signal-trend {
+            height: 4px;
+            width: 100%;
+            background-color: #3d3d3d;
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+        }
+        .signal-trend::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: var(--trend-width, 50%);
+            background-color: var(--trend-color, #00ff88);
+            transition: all 0.3s ease;
+        }
+        .trend-up {
+            --trend-color: #00ff88;
+        }
+        .trend-down {
+            --trend-color: #ff4444;
+        }
+        .trend-neutral {
+            --trend-color: #ffbb00;
+        }
+        .market-summary-cell {
+            position: relative;
+            padding-right: 25px !important;
+        }
+        .market-summary-cell::after {
+            content: '';
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .trend-indicator-up::after {
+            background-color: #00ff88;
+        }
+        .trend-indicator-down::after {
+            background-color: #ff4444;
+        }
+        .trend-indicator-neutral::after {
+            background-color: #ffbb00;
+        }
+        .price-change-up {
+            color: #00ff88;
+        }
+        .price-change-down {
+            color: #ff4444;
+        }
+        .liquidity-score {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .liquidity-high {
+            background-color: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+        .liquidity-medium {
+            background-color: rgba(255, 187, 0, 0.2);
+            color: #ffbb00;
+        }
+        .liquidity-low {
+            background-color: rgba(255, 68, 68, 0.2);
+            color: #ff4444;
+        }
+        .expand-row {
+            background-color: transparent !important;
+        }
+        .expand-row:hover {
+            background-color: transparent !important;
+        }
+        .expand-btn {
+            color: #00ff88;
+            border-color: #00ff88;
+            background: transparent;
+            padding: 0.25rem 1rem;
+            margin: 0.5rem 0;
+            transition: all 0.3s ease;
+        }
+        .expand-btn:hover {
+            background: #00ff88;
+            color: #1a1a1a;
+        }
+        #priceTrendChart {
+            min-height: 300px;
+            width: 100%;
+        }
+        /* Welcome Modal Styles */
+        .welcome-modal {
+            display: none;
+            position: fixed;
+            z-index: 1050;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            animation: fadeIn 0.3s ease-out;
+        }
+        .welcome-modal-content {
+            background-color: #2d2d2d;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 600px;
+            position: relative;
+            animation: slideDown 0.4s ease-out;
+        }
+        .welcome-header {
+            color: #00ff88;
+            font-size: 24px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .welcome-text {
+            color: #ffffff;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+        .welcome-footer {
+            text-align: right;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideDown {
+            from { transform: translateY(-100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Welcome Modal -->
+    <div id="welcomeModal" class="welcome-modal">
+        <div class="welcome-modal-content">
+            <div class="welcome-header">
+                Welcome to PolyMarket Analyzer
+            </div>
+            <div class="welcome-text">
+                <p>Hello! I'm Jake Yunkee, a Full-Stack Developer specializing in Python and .NET, currently based in Athens, Greece. This project showcases my expertise in:</p>
+                <ul>
+                    <li>Python-based backend development with Flask and async programming</li>
+                    <li>Real-time data processing and API integration</li>
+                    <li>Advanced analytics and data visualization</li>
+                    <li>Modern frontend development with HTML5, CSS3, and JavaScript</li>
+                </ul>
+                <p>With experience at companies like Epsilon Net and Satori Analytics, I've developed numerous enterprise-level applications focusing on performance, scalability, and user experience. This dashboard demonstrates my ability to create sophisticated analytical tools that process real-time market data.</p>
+                <p class="mt-3">
+                    <small class="text-muted">
+                        Contact: retail.ecom.management@gmail.com | +13238530375
+                    </small>
+                </p>
+            </div>
+            <div class="welcome-footer">
+                <button class="btn btn-custom" onclick="closeWelcomeModal()">Explore Dashboard</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1 class="text-center mb-4 animate__animated animate__fadeIn">Polymarket Analytics Dashboard</h1>
+        
+        <!-- Control Panel -->
+        <div class="control-panel animate__animated animate__fadeIn">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <div class="btn-group" role="group">
+                        <button id="toggleFetch" class="btn btn-custom">
+                            Stop Auto-Refresh
+                        </button>
+                        <button id="clearDashboard" class="btn btn-danger ms-2">
+                            Clear Data
+                        </button>
+                    </div>
+                    <div id="status" class="mt-2">
+                        <small class="text-muted">Auto-refresh: Active</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="stats-value" id="totalVolume">$0</div>
+                    <div class="stats-label">Total Volume</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="stats-value" id="totalTrades">0</div>
+                    <div class="stats-label">Total Trades</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="stats-value" id="uniqueTraders">0</div>
+                    <div class="stats-label">Unique Traders</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="stats-value" id="avgPrice">$0</div>
+                    <div class="stats-label">Average Price</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Market Performance Summary Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Market Performance Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover" id="marketSummaryTable">
+                        <thead>
+                            <tr>
+                                <th>Market</th>
+                                <th>24h Volume</th>
+                                <th>24h Price Change</th>
+                                <th>Buy Pressure</th>
+                                <th>Liquidity Score</th>
+                                <th>Active Traders</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Table rows will be dynamically populated -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Buy/Sell Ratio</h5>
+                        <div class="chart-container">
+                            <canvas id="buySellChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Market Distribution</h5>
+                        <div class="chart-container">
+                            <canvas id="marketsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Price Trend Analysis</h5>
+                        <div class="chart-container">
+                            <canvas id="priceTrendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Traders Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Top Traders</h5>
+                        <div id="tradersGrid" class="row">
+                            <!-- Trader cards will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trading Signals -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Trading Signals</h5>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="signal-card text-center p-3">
+                                    <h6>Market Momentum</h6>
+                                    <div id="momentumSignal" class="signal-value">-</div>
+                                    <div class="signal-trend"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="signal-card text-center p-3">
+                                    <h6>Volume Analysis</h6>
+                                    <div id="volumeSignal" class="signal-value">-</div>
+                                    <div class="signal-trend"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="signal-card text-center p-3">
+                                    <h6>Smart Money Flow</h6>
+                                    <div id="smartMoneySignal" class="signal-value">-</div>
+                                    <div class="signal-trend"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="signal-card text-center p-3">
+                                    <h6>Market Sentiment</h6>
+                                    <div id="sentimentSignal" class="signal-value">-</div>
+                                    <div class="signal-trend"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Trades Table -->
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Recent Trades</h5>
+                <div class="table-container">
+                    <table class="table" id="tradesTable">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Trader</th>
+                                <th>Type</th>
+                                <th>Market</th>
+                                <th>Size</th>
+                                <th>Price</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                    <button id="loadMore" class="load-more">Load More</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification" class="notification"></div>
+
+    <script>
+        let buySellChart = null;
+        let marketsChart = null;
+        let isFetching = true;
+        let intervalId = null;
+        let allTrades = [];
+        let displayedTrades = 0;
+        const TRADES_PER_PAGE = 20;
+        let cumulativeAnalytics = {
+            total_volume: 0,
+            total_trades: 0,
+            unique_traders: new Set(),
+            prices: [],
+            market_counts: {},
+            buy_count: 0,
+            sell_count: 0,
+            trader_volumes: {}
+        };
+
+        // Format currency
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD'
+            }).format(value);
+        }
+
+        // Format date
+        function formatDate(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString();
+        }
+
+        // Show notification
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.style.backgroundColor = type === 'success' ? '#00ff88' : '#ff4444';
+            notification.style.display = 'block';
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+
+        // Update analytics cards
+        function updateAnalytics(analytics) {
+            document.getElementById('totalVolume').textContent = formatCurrency(analytics.total_volume);
+            document.getElementById('totalTrades').textContent = analytics.total_trades;
+            document.getElementById('uniqueTraders').textContent = analytics.unique_traders.size;
+            const avgPrice = analytics.prices.length > 0 
+                ? analytics.prices.reduce((a, b) => a + b) / analytics.prices.length 
+                : 0;
+            document.getElementById('avgPrice').textContent = formatCurrency(avgPrice);
+        }
+
+        // Update Buy/Sell chart
+        function updateBuySellChart(buyCount, sellCount) {
+            const ctx = document.getElementById('buySellChart');
+            if (buySellChart) {
+                buySellChart.destroy();
+            }
+            buySellChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Buy', 'Sell'],
+                    datasets: [{
+                        data: [buyCount, sellCount],
+                        backgroundColor: ['#00ff88', '#ff4444'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#ffffff'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update Markets chart
+        function updateMarketsChart(marketCounts) {
+            const ctx = document.getElementById('marketsChart');
+            if (marketsChart) {
+                marketsChart.destroy();
+            }
+            const sortedMarkets = Object.entries(marketCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+            marketsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sortedMarkets.map(m => m[0]),
+                    datasets: [{
+                        label: 'Trades',
+                        data: sortedMarkets.map(m => m[1]),
+                        backgroundColor: '#00ff88',
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#3d3d3d'
+                            },
+                            ticks: {
+                                color: '#ffffff'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#ffffff',
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update traders grid
+        function updateTradersGrid(traders) {
+            const grid = document.getElementById('tradersGrid');
+            grid.innerHTML = '';
+            
+            traders.forEach(trader => {
+                const card = document.createElement('div');
+                card.className = 'col-md-4 mb-4';
+                card.innerHTML = `
+                    <div class="card trader-card" onclick="window.location.href='/profile/${trader.address}'">
+                        <div class="card-body">
+                            <h5 class="card-title">${trader.pseudonym}</h5>
+                            <div class="stats-value mb-2">${formatCurrency(trader.volume)}</div>
+                            <div class="stats-label mb-2">Trading Volume</div>
+                            <div class="score-components">
+                                <div class="score-component mb-1">
+                                    Win Rate
+                                    <div class="score-bar">
+                                        <div class="score-fill" style="width: ${trader.win_rate}%"></div>
+                                    </div>
+                                </div>
+                                <div class="score-component">
+                                    Total Trades: ${trader.trades}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Update trades table
+        function updateTradesTable(trades, append = false) {
+            const tbody = document.querySelector('#tradesTable tbody');
+            if (!append) {
+                tbody.innerHTML = '';
+            }
+            
+            trades.forEach(trade => {
+                const row = document.createElement('tr');
+                const amount = (trade.size * trade.price).toFixed(2);
+                row.innerHTML = `
+                    <td>${formatDate(trade.timestamp * 1000)}</td>
+                    <td><a href="/profile/${trade.proxy_wallet}" class="text-info">${trade.pseudonym}</a></td>
+                    <td><span class="badge badge-${trade.side.toLowerCase()}">${trade.side}</span></td>
+                    <td>${trade.title}</td>
+                    <td>${trade.size.toFixed(4)}</td>
+                    <td>${formatCurrency(trade.price)}</td>
+                    <td>${formatCurrency(amount)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Load more trades
+        document.getElementById('loadMore').addEventListener('click', () => {
+            const start = displayedTrades;
+            const end = start + TRADES_PER_PAGE;
+            const tradesToShow = allTrades.slice(start, end);
+            if (tradesToShow.length > 0) {
+                updateTradesTable(tradesToShow, true);
+                displayedTrades = end;
+            }
+            if (displayedTrades >= allTrades.length) {
+                document.getElementById('loadMore').style.display = 'none';
+            }
+        });
+
+        // Toggle fetching
+        document.getElementById('toggleFetch').addEventListener('click', function() {
+            isFetching = !isFetching;
+            this.textContent = isFetching ? 'Stop Auto-Refresh' : 'Start Auto-Refresh';
+            this.className = `btn ${isFetching ? 'btn-custom' : 'btn-success'}`;
+            document.getElementById('status').innerHTML = 
+                `<small class="text-muted">Auto-refresh: ${isFetching ? 'Active' : 'Paused'}</small>`;
+            
+            if (isFetching) {
+                fetchData();
+                intervalId = setInterval(fetchData, 10000);
+            } else {
+                clearInterval(intervalId);
+            }
+        });
+
+        // Clear dashboard
+        document.getElementById('clearDashboard').addEventListener('click', () => {
+            cumulativeAnalytics = {
+                total_volume: 0,
+                total_trades: 0,
+                unique_traders: new Set(),
+                prices: [],
+                market_counts: {},
+                buy_count: 0,
+                sell_count: 0,
+                trader_volumes: {}
+            };
+            allTrades = [];
+            displayedTrades = 0;
+            updateAnalytics(cumulativeAnalytics);
+            updateBuySellChart(0, 0);
+            updateMarketsChart({});
+            updateTradesTable([]);
+            showNotification('Dashboard cleared');
+        });
+
+        // Market Summary Table functionality
+        let isExpanded = false;
+        const INITIAL_ROWS_SHOWN = 10;
+
+        function updateMarketSummary(trades) {
+            const tbody = document.querySelector('#marketSummaryTable tbody');
+            if (!tbody) return;
+            
+            // Group trades by market
+            const marketData = {};
+            trades.forEach(trade => {
+                if (!marketData[trade.title]) {
+                    marketData[trade.title] = {
+                        name: trade.title,
+                        volume: 0,
+                        trades: 0,
+                        prices: [],
+                        traders: new Set(),
+                        recentPrices: [],
+                        buyCount: 0,
+                        totalTrades: 0
+                    };
+                }
+                
+                const market = marketData[trade.title];
+                market.volume += trade.size * trade.price;
+                market.trades++;
+                market.prices.push(trade.price);
+                market.traders.add(trade.proxy_wallet);
+                market.recentPrices.push({
+                    price: trade.price,
+                    timestamp: trade.timestamp
+                });
+                
+                if (trade.side === 'BUY') {
+                    market.buyCount++;
+                }
+                market.totalTrades++;
+            });
+
+            // Clear existing rows
+            tbody.innerHTML = '';
+
+            // Sort markets by volume
+            const sortedMarkets = Object.values(marketData).sort((a, b) => b.volume - a.volume);
+            
+            // Determine how many rows to show
+            const rowsToShow = isExpanded ? sortedMarkets.length : Math.min(INITIAL_ROWS_SHOWN, sortedMarkets.length);
+            
+            // Add market rows
+            sortedMarkets.slice(0, rowsToShow).forEach(market => {
+                // Calculate metrics
+                const oldPrice = market.recentPrices[0]?.price || 0;
+                const newPrice = market.recentPrices[market.recentPrices.length - 1]?.price || 0;
+                const priceChange = oldPrice ? ((newPrice - oldPrice) / oldPrice) * 100 : 0;
+                const buyPressure = (market.buyCount / market.totalTrades) * 100;
+                const liquidityScore = Math.min(100, 
+                    (market.volume / 1000) * 40 + 
+                    (market.traders.size / 10) * 30 + 
+                    (market.trades / 50) * 30
+                );
+
+                // Create row
+                const row = document.createElement('tr');
+                const priceChangeClass = priceChange >= 0 ? 'text-success' : 'text-danger';
+                const buyPressureClass = buyPressure >= 60 ? 'text-success' : 
+                                       buyPressure <= 40 ? 'text-danger' : 'text-warning';
+                const liquidityClass = liquidityScore >= 80 ? 'text-success' : 
+                                     liquidityScore >= 50 ? 'text-warning' : 'text-danger';
+                
+                row.innerHTML = `
+                    <td>${market.name}</td>
+                    <td>${formatCurrency(market.volume)}</td>
+                    <td class="${priceChangeClass}">${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}%</td>
+                    <td class="${buyPressureClass}">${buyPressure.toFixed(1)}%</td>
+                    <td class="${liquidityClass}">${Math.round(liquidityScore)}</td>
+                    <td>${market.traders.size}</td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+
+            // Add expand/collapse button if there are more than INITIAL_ROWS_SHOWN markets
+            if (sortedMarkets.length > INITIAL_ROWS_SHOWN) {
+                const expandRow = document.createElement('tr');
+                expandRow.className = 'expand-row';
+                expandRow.innerHTML = `
+                    <td colspan="6" class="text-center">
+                        <button class="btn btn-outline-primary btn-sm expand-btn">
+                            ${isExpanded ? 'Show Less' : `Show ${sortedMarkets.length - INITIAL_ROWS_SHOWN} More`}
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(expandRow);
+
+                // Add click handler
+                const expandBtn = expandRow.querySelector('.expand-btn');
+                expandBtn.onclick = () => {
+                    isExpanded = !isExpanded;
+                    updateMarketSummary(trades);
+                };
+            }
+        }
+
+        // Price Trend Chart
+        function updatePriceTrendChart(trades) {
+            const ctx = document.getElementById('priceTrendChart');
+            if (!ctx) return;
+            
+            // Sort trades by timestamp
+            const sortedTrades = [...trades].sort((a, b) => a.timestamp - b.timestamp);
+            
+            // Get the last 24 hours of data
+            const now = Math.floor(Date.now() / 1000);
+            const oneDayAgo = now - (24 * 60 * 60);
+            const recentTrades = sortedTrades.filter(trade => trade.timestamp >= oneDayAgo);
+
+            if (recentTrades.length === 0) return; // Don't update if no recent trades
+
+            // Group trades by hour
+            const hourlyData = {};
+            const currentHour = new Date().getHours();
+            
+            // Initialize all 24 hours with null values
+            for (let i = 0; i < 24; i++) {
+                const hour = (currentHour - i + 24) % 24;
+                hourlyData[hour] = {
+                    total: 0,
+                    count: 0,
+                    volume: 0
+                };
+            }
+
+            // Fill in actual data
+            recentTrades.forEach(trade => {
+                const hour = new Date(trade.timestamp * 1000).getHours();
+                hourlyData[hour].total += trade.price;
+                hourlyData[hour].count++;
+                hourlyData[hour].volume += trade.size * trade.price;
+            });
+
+            // Create datasets
+            const labels = [];
+            const prices = [];
+            const volumes = [];
+
+            // Generate data for the last 24 hours in chronological order
+            for (let i = 23; i >= 0; i--) {
+                const hour = (currentHour - i + 24) % 24;
+                labels.push(`${hour}:00`);
+                
+                const hourData = hourlyData[hour];
+                if (hourData.count > 0) {
+                    prices.push(hourData.total / hourData.count);
+                    volumes.push(hourData.volume);
+                } else {
+                    // If no trades in this hour, use the last known price
+                    const lastPrice = prices[prices.length - 1];
+                    prices.push(lastPrice || null);
+                    volumes.push(0);
+                }
+            }
+
+            // Destroy existing chart if it exists
+            if (window.priceTrendChart instanceof Chart) {
+                window.priceTrendChart.destroy();
+            }
+
+            // Create new chart
+            window.priceTrendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Average Price',
+                            data: prices,
+                            borderColor: '#00ff88',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4,
+                            yAxisID: 'y',
+                            spanGaps: true,
+                            pointRadius: 3,
+                            pointHoverRadius: 5
+                        },
+                        {
+                            label: 'Volume',
+                            data: volumes,
+                            type: 'bar',
+                            backgroundColor: 'rgba(0, 255, 136, 0.2)',
+                            yAxisID: 'y1',
+                            barThickness: 'flex',
+                            maxBarThickness: 20
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: {
+                                color: '#ffffff',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.dataset.label === 'Average Price') {
+                                        return `Price: ${formatCurrency(context.raw)}`;
+                                    }
+                                    return `Volume: ${formatCurrency(context.raw)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            grid: {
+                                color: '#3d3d3d'
+                            },
+                            ticks: {
+                                color: '#ffffff',
+                                callback: function(value) {
+                                    return formatCurrency(value);
+                                }
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            grid: {
+                                drawOnChartArea: false
+                            },
+                            ticks: {
+                                color: '#ffffff',
+                                callback: function(value) {
+                                    return formatCurrency(value);
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#ffffff',
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update Trading Signals
+        function updateTradingSignals(signals) {
+            const signalIds = ['momentum', 'volume', 'smartMoney', 'sentiment'];
+            
+            signalIds.forEach(id => {
+                const signal = signals[id];
+                const element = document.getElementById(`${id}Signal`);
+                const trend = element.nextElementSibling;
+                
+                element.textContent = signal.value;
+                trend.className = `signal-trend trend-${signal.trend}`;
+                trend.style.setProperty('--trend-width', `${signal.strength}%`);
+            });
+        }
+
+        // Calculate trading signals
+        function calculateTradingSignals(data) {
+            // Market Momentum
+            const momentum = {
+                value: 'Bullish',
+                trend: 'up',
+                strength: 75
+            };
+
+            // Volume Analysis
+            const volume = {
+                value: 'High',
+                trend: 'up',
+                strength: 85
+            };
+
+            // Smart Money Flow
+            const smartMoney = {
+                value: 'Accumulating',
+                trend: 'up',
+                strength: 65
+            };
+
+            // Market Sentiment
+            const sentiment = {
+                value: 'Positive',
+                trend: 'up',
+                strength: 80
+            };
+
+            return { momentum, volume, smartMoney, sentiment };
+        }
+
+        // Fetch data
+        async function fetchData() {
+            try {
+                const response = await fetch('/trades');
+                const data = await response.json();
+                
+                if (!data.trades || !data.analytics) {
+                    throw new Error('Invalid data format');
+                }
+
+                // Update trades list
+                allTrades = data.trades.concat(allTrades);
+                allTrades = allTrades.slice(0, 1000); // Keep last 1000 trades
+                
+                // Update displayed trades if at top
+                if (displayedTrades === 0) {
+                    updateTradesTable(allTrades.slice(0, TRADES_PER_PAGE));
+                    displayedTrades = TRADES_PER_PAGE;
+                }
+
+                // Calculate analytics from trades data
+                const analytics = {
+                    total_volume: 0,
+                    total_trades: allTrades.length,
+                    unique_traders: new Set(),
+                    prices: [],
+                    market_counts: {},
+                    buy_count: 0,
+                    sell_count: 0,
+                    trader_volumes: {}
+                };
+
+                allTrades.forEach(trade => {
+                    const tradeVolume = trade.size * trade.price;
+                    analytics.total_volume += tradeVolume;
+                    analytics.unique_traders.add(trade.proxy_wallet);
+                    analytics.prices.push(trade.price);
+                    
+                    analytics.market_counts[trade.title] = 
+                        (analytics.market_counts[trade.title] || 0) + 1;
+                    
+                    if (trade.side === 'BUY') {
+                        analytics.buy_count++;
+                    } else {
+                        analytics.sell_count++;
+                    }
+                    
+                    analytics.trader_volumes[trade.proxy_wallet] = 
+                        (analytics.trader_volumes[trade.proxy_wallet] || 0) + tradeVolume;
+                });
+
+                // Update all UI components with real data
+                updateAnalytics(analytics);
+                updateBuySellChart(analytics.buy_count, analytics.sell_count);
+                updateMarketsChart(analytics.market_counts);
+                updatePriceTrendChart(allTrades);
+                updateMarketSummary(allTrades);
+                
+                // Update top traders
+                const topTraders = Object.entries(analytics.trader_volumes)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 6)
+                    .map(([address, volume]) => ({
+                        address,
+                        pseudonym: address.slice(0, 8) + '...',
+                        volume: volume,
+                        trades: allTrades.filter(t => t.proxy_wallet === address).length,
+                        win_rate: calculateWinRate(allTrades.filter(t => t.proxy_wallet === address))
+                    }));
+                updateTradersGrid(topTraders);
+
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                showNotification('Error fetching data', 'error');
+            }
+        }
+
+        // Calculate win rate from trades
+        function calculateWinRate(trades) {
+            if (!trades || trades.length === 0) return 0;
+            const sellTrades = trades.filter(t => t.side === 'SELL');
+            if (sellTrades.length === 0) return 0;
+            
+            const winningTrades = sellTrades.filter(t => t.usdcSize > t.size);
+            return (winningTrades.length / sellTrades.length) * 100;
+        }
+
+        // Initialize
+        fetchData();
+        intervalId = setInterval(fetchData, 10000);
+
+        // Add CSS for the table
+        const style = document.createElement('style');
+        style.textContent = `
+            .table-dark {
+                background-color: #1a1a1a;
+                color: #ffffff;
+            }
+            .table-dark thead th {
+                background-color: #2d2d2d;
+                border-bottom: 2px solid #3d3d3d;
+                color: #00ff88;
+                font-weight: 600;
+                text-transform: uppercase;
+                font-size: 0.85rem;
+            }
+            .table-dark tbody tr {
+                border-bottom: 1px solid #2d2d2d;
+            }
+            .table-dark tbody tr:hover {
+                background-color: #2d2d2d;
+            }
+            .text-success {
+                color: #00ff88 !important;
+            }
+            .text-danger {
+                color: #ff4444 !important;
+            }
+            .text-warning {
+                color: #ffbb33 !important;
+            }
+            .card {
+                background-color: #1a1a1a;
+                border: 1px solid #2d2d2d;
+            }
+            .card-header {
+                background-color: #2d2d2d;
+                border-bottom: 1px solid #3d3d3d;
+                padding: 1rem;
+            }
+            .card-title {
+                color: #00ff88;
+                margin: 0;
+                font-size: 1.1rem;
+                font-weight: 600;
+            }
+            .table-responsive {
+                overflow-x: auto;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Welcome Modal Functions
+        function showWelcomeModal() {
+            document.getElementById('welcomeModal').style.display = 'block';
+        }
+
+        function closeWelcomeModal() {
+            document.getElementById('welcomeModal').style.display = 'none';
+            localStorage.setItem('welcomeModalShown', 'true');
+        }
+
+        // Show welcome modal on first visit
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!localStorage.getItem('welcomeModalShown')) {
+                showWelcomeModal();
+            }
+        });
+    </script>
+</body>
+</html>

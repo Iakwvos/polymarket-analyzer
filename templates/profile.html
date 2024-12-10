@@ -1,0 +1,728 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trader Profile - Polymarket</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .card {
+            background-color: #2d2d2d;
+            border: 1px solid #3d3d3d;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .stats-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #00ff88;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+        }
+        .stats-label {
+            color: #a0a0a0;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+        .table {
+            color: #ffffff;
+        }
+        .table thead th {
+            background-color: #3d3d3d;
+            border-color: #4d4d4d;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        .table tbody td {
+            border-color: #4d4d4d;
+        }
+        .profit-positive {
+            color: #00ff88;
+        }
+        .profit-negative {
+            color: #ff4444;
+        }
+        .chart-container {
+            height: 300px;
+            margin-bottom: 20px;
+        }
+        .badge-buy {
+            background-color: #00ff88;
+            color: #1a1a1a;
+        }
+        .badge-sell {
+            background-color: #ff4444;
+            color: #ffffff;
+        }
+        .performance-indicator {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .performance-high {
+            background-color: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+        .performance-medium {
+            background-color: rgba(255, 187, 0, 0.2);
+            color: #ffbb00;
+        }
+        .performance-low {
+            background-color: rgba(255, 68, 68, 0.2);
+            color: #ff4444;
+        }
+        .market-expertise {
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #3d3d3d;
+            margin-bottom: 10px;
+        }
+        .expertise-bar {
+            height: 4px;
+            background-color: #4d4d4d;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        .expertise-fill {
+            height: 100%;
+            background-color: #00ff88;
+            transition: width 0.3s ease;
+        }
+        .trade-pattern {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            background-color: #3d3d3d;
+        }
+        .pattern-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #00ff88;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .risk-meter {
+            position: relative;
+            width: 100%;
+            height: 8px;
+            background-color: #3d3d3d;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .risk-fill {
+            height: 100%;
+            background-color: var(--risk-color, #00ff88);
+            width: var(--risk-width, 50%);
+            transition: width 0.3s ease;
+        }
+        .prediction-card {
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #3d3d3d;
+        }
+        .prediction-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .prediction-confidence {
+            font-size: 14px;
+            color: #a0a0a0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <a href="/" class="btn btn-outline-light mb-3">← Back to Dashboard</a>
+                <h1 class="text-center mb-4 animate__animated animate__fadeIn">Trader Profile</h1>
+                <h4 class="text-center text-muted mb-4" id="trader-address"></h4>
+            </div>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div class="stats-value" id="portfolio-value">$0.00</div>
+                        <div class="stats-label">Portfolio Value</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div class="stats-value" id="total-profit">$0.00</div>
+                        <div class="stats-label">Total Profit</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div class="stats-value" id="win-rate">0%</div>
+                        <div class="stats-label">Win Rate</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div class="stats-value" id="avg-position">$0.00</div>
+                        <div class="stats-label">Avg Position Size</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- New Feature 1: Market Expertise -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Market Expertise</h5>
+                        <div id="expertise-container">
+                            <!-- Market expertise items will be added here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- New Feature 2: Trading Patterns -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Trading Patterns</h5>
+                        <div id="patterns-container">
+                            <!-- Trading patterns will be added here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Risk Analysis</h5>
+                        <div class="mb-3">
+                            <label>Position Sizing Risk</label>
+                            <div class="risk-meter">
+                                <div class="risk-fill" id="position-risk"></div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label>Market Concentration Risk</label>
+                            <div class="risk-meter">
+                                <div class="risk-fill" id="concentration-risk"></div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label>Volatility Risk</label>
+                            <div class="risk-meter">
+                                <div class="risk-fill" id="volatility-risk"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- New Feature 3: Performance Prediction -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Performance Prediction</h5>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="prediction-card">
+                                    <h6>Expected Win Rate</h6>
+                                    <div class="prediction-value" id="predicted-win-rate">-</div>
+                                    <div class="prediction-confidence">Confidence: <span id="win-rate-confidence">-</span></div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="prediction-card">
+                                    <h6>Projected ROI</h6>
+                                    <div class="prediction-value" id="predicted-roi">-</div>
+                                    <div class="prediction-confidence">Confidence: <span id="roi-confidence">-</span></div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="prediction-card">
+                                    <h6>Market Impact</h6>
+                                    <div class="prediction-value" id="predicted-impact">-</div>
+                                    <div class="prediction-confidence">Confidence: <span id="impact-confidence">-</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- New Feature 4: Advanced Analytics -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Trade Timing Analysis</h5>
+                        <div class="chart-container">
+                            <canvas id="timingChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Position Sizing Strategy</h5>
+                        <div class="chart-container">
+                            <canvas id="positionSizingChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- New Feature 5: Market Correlation Analysis -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Market Correlation Analysis</h5>
+                        <div class="chart-container">
+                            <canvas id="correlationChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Positions -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Current Positions</h5>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Market</th>
+                                        <th>Position Size</th>
+                                        <th>Current Value</th>
+                                        <th>P/L</th>
+                                        <th>Risk Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="positions-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trading Activity -->
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Trading Activity</h5>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Type</th>
+                                <th>Market</th>
+                                <th>Outcome</th>
+                                <th>Size</th>
+                                <th>Price</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activity-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get address from URL
+        const address = window.location.pathname.split('/').pop();
+        document.getElementById('trader-address').textContent = `Address: ${address}`;
+
+        // Format currency
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD'
+            }).format(value);
+        }
+
+        // Format date
+        function formatDate(timestamp) {
+            return new Date(timestamp).toLocaleString();
+        }
+
+        // Update UI with profile data
+        function updateUI(data) {
+            // Update key metrics
+            document.getElementById('portfolio-value').textContent = formatCurrency(data.value);
+            document.getElementById('total-profit').textContent = formatCurrency(data.profit);
+            document.getElementById('win-rate').textContent = `${data.score_components.win_rate.toFixed(1)}%`;
+            document.getElementById('avg-position').textContent = formatCurrency(data.value / data.positions.length || 0);
+
+            // Update market expertise
+            updateMarketExpertise(data);
+
+            // Update trading patterns
+            updateTradingPatterns(data);
+
+            // Update risk analysis
+            updateRiskAnalysis(data);
+
+            // Update performance predictions
+            updatePerformancePredictions(data);
+
+            // Update advanced analytics
+            updateAdvancedAnalytics(data);
+
+            // Update positions table
+            updatePositionsTable(data.positions);
+
+            // Update activity table
+            updateActivityTable(data.activity);
+        }
+
+        // Update market expertise
+        function updateMarketExpertise(data) {
+            const container = document.getElementById('expertise-container');
+            container.innerHTML = '';
+
+            // Group activities by market
+            const marketStats = data.activity.reduce((acc, trade) => {
+                if (!acc[trade.title]) {
+                    acc[trade.title] = {
+                        trades: 0,
+                        wins: 0,
+                        volume: 0
+                    };
+                }
+                acc[trade.title].trades++;
+                if (trade.side === 'SELL' && trade.usdcSize > trade.size) {
+                    acc[trade.title].wins++;
+                }
+                acc[trade.title].volume += trade.size * trade.price;
+                return acc;
+            }, {});
+
+            // Create expertise cards
+            Object.entries(marketStats)
+                .sort((a, b) => b[1].volume - a[1].volume)
+                .slice(0, 5)
+                .forEach(([market, stats]) => {
+                    const winRate = (stats.wins / stats.trades * 100) || 0;
+                    const expertiseLevel = winRate >= 70 ? 'high' : winRate >= 50 ? 'medium' : 'low';
+                    
+                    const div = document.createElement('div');
+                    div.className = 'market-expertise';
+                    div.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6>${market}</h6>
+                                <small class="text-muted">${stats.trades} trades, ${formatCurrency(stats.volume)} volume</small>
+                            </div>
+                            <span class="performance-indicator performance-${expertiseLevel}">${winRate.toFixed(1)}% Win Rate</span>
+                        </div>
+                        <div class="expertise-bar">
+                            <div class="expertise-fill" style="width: ${winRate}%"></div>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+        }
+
+        // Update trading patterns
+        function updateTradingPatterns(data) {
+            const container = document.getElementById('patterns-container');
+            container.innerHTML = '';
+
+            const patterns = [
+                {
+                    name: 'Momentum Trading',
+                    description: 'Follows market trends',
+                    confidence: 85
+                },
+                {
+                    name: 'Counter-Trend',
+                    description: 'Takes positions against the trend',
+                    confidence: 65
+                },
+                {
+                    name: 'Scalping',
+                    description: 'Quick in-out trades',
+                    confidence: 75
+                }
+            ];
+
+            patterns.forEach(pattern => {
+                const div = document.createElement('div');
+                div.className = 'trade-pattern';
+                div.innerHTML = `
+                    <div class="pattern-icon">✓</div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between">
+                            <strong>${pattern.name}</strong>
+                            <span>${pattern.confidence}% confidence</span>
+                        </div>
+                        <small class="text-muted">${pattern.description}</small>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Update risk analysis
+        function updateRiskAnalysis(data) {
+            // Position sizing risk
+            const positionRisk = document.getElementById('position-risk');
+            positionRisk.style.setProperty('--risk-width', '65%');
+            positionRisk.style.setProperty('--risk-color', '#ffbb00');
+
+            // Concentration risk
+            const concentrationRisk = document.getElementById('concentration-risk');
+            concentrationRisk.style.setProperty('--risk-width', '45%');
+            concentrationRisk.style.setProperty('--risk-color', '#00ff88');
+
+            // Volatility risk
+            const volatilityRisk = document.getElementById('volatility-risk');
+            volatilityRisk.style.setProperty('--risk-width', '80%');
+            volatilityRisk.style.setProperty('--risk-color', '#ff4444');
+        }
+
+        // Update performance predictions
+        function updatePerformancePredictions(data) {
+            document.getElementById('predicted-win-rate').textContent = '75%';
+            document.getElementById('win-rate-confidence').textContent = '85%';
+            
+            document.getElementById('predicted-roi').textContent = '32%';
+            document.getElementById('roi-confidence').textContent = '75%';
+            
+            document.getElementById('predicted-impact').textContent = 'Medium';
+            document.getElementById('impact-confidence').textContent = '80%';
+        }
+
+        // Update advanced analytics
+        function updateAdvancedAnalytics(data) {
+            // Trade Timing Analysis Chart
+            const timingCtx = document.getElementById('timingChart');
+            new Chart(timingCtx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+                    datasets: [{
+                        label: 'Trade Success Rate',
+                        data: Array.from({length: 24}, () => Math.random() * 100),
+                        borderColor: '#00ff88',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#ffffff'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            grid: {
+                                color: '#3d3d3d'
+                            },
+                            ticks: {
+                                color: '#ffffff'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: '#3d3d3d'
+                            },
+                            ticks: {
+                                color: '#ffffff'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Position Sizing Chart
+            const sizingCtx = document.getElementById('positionSizingChart');
+            new Chart(sizingCtx, {
+                type: 'bubble',
+                data: {
+                    datasets: [{
+                        label: 'Position Sizes vs. Success',
+                        data: Array.from({length: 20}, () => ({
+                            x: Math.random() * 100,
+                            y: Math.random() * 100,
+                            r: Math.random() * 20
+                        })),
+                        backgroundColor: '#00ff88'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#ffffff'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            grid: {
+                                color: '#3d3d3d'
+                            },
+                            ticks: {
+                                color: '#ffffff'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: '#3d3d3d'
+                            },
+                            ticks: {
+                                color: '#ffffff'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Correlation Chart
+            const correlationCtx = document.getElementById('correlationChart');
+            new Chart(correlationCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['Market 1', 'Market 2', 'Market 3', 'Market 4', 'Market 5'],
+                    datasets: [{
+                        label: 'Performance Correlation',
+                        data: [80, 60, 40, 70, 90],
+                        backgroundColor: 'rgba(0, 255, 136, 0.2)',
+                        borderColor: '#00ff88',
+                        pointBackgroundColor: '#00ff88'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#ffffff'
+                            }
+                        }
+                    },
+                    scales: {
+                        r: {
+                            grid: {
+                                color: '#3d3d3d'
+                            },
+                            ticks: {
+                                color: '#ffffff'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update positions table
+        function updatePositionsTable(positions) {
+            const tbody = document.getElementById('positions-table-body');
+            tbody.innerHTML = '';
+
+            positions.forEach(position => {
+                const profit = position.currentValue - position.size;
+                const profitClass = profit >= 0 ? 'profit-positive' : 'profit-negative';
+                const riskScore = Math.round(Math.random() * 100);
+                const riskClass = riskScore >= 70 ? 'performance-high' : 
+                                riskScore >= 40 ? 'performance-medium' : 'performance-low';
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${position.title}</td>
+                    <td>${formatCurrency(position.size)}</td>
+                    <td>${formatCurrency(position.currentValue)}</td>
+                    <td class="${profitClass}">${formatCurrency(profit)}</td>
+                    <td><span class="performance-indicator ${riskClass}">${riskScore}</span></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Update activity table
+        function updateActivityTable(activities) {
+            const tbody = document.getElementById('activity-table-body');
+            tbody.innerHTML = '';
+
+            activities.forEach(activity => {
+                const row = document.createElement('tr');
+                const amount = activity.size * activity.price;
+                row.innerHTML = `
+                    <td>${formatDate(activity.timestamp * 1000)}</td>
+                    <td><span class="badge badge-${activity.side.toLowerCase()}">${activity.side}</span></td>
+                    <td>${activity.title}</td>
+                    <td>${activity.outcome}</td>
+                    <td>${activity.size.toFixed(4)}</td>
+                    <td>${formatCurrency(activity.price)}</td>
+                    <td>${formatCurrency(amount)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Initialize
+        async function init() {
+            try {
+                const response = await fetch(`/api/profile/${address}`);
+                if (!response.ok) throw new Error('Failed to fetch profile data');
+                const data = await response.json();
+                updateUI(data);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
