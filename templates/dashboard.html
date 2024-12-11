@@ -17,13 +17,22 @@
             border: 1px solid #3d3d3d;
             margin-bottom: 20px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            transition: transform 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.6s ease-out forwards;
         }
         .card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(0, 255, 136, 0.15);
         }
         .trader-card {
             cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .trader-card:hover {
+            transform: translateY(-5px) scale(1.03);
+            box-shadow: 0 8px 25px rgba(0, 255, 136, 0.2);
         }
         .trust-score {
             font-size: 24px;
@@ -53,10 +62,29 @@
             color: #1a1a1a;
             border: none;
             transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
         }
         .btn-custom:hover {
             background-color: #00cc6a;
             transform: scale(1.05);
+        }
+        .btn-custom::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s ease, height 0.6s ease;
+        }
+        .btn-custom:hover::after {
+            width: 300%;
+            height: 300%;
         }
         .notification {
             position: fixed;
@@ -68,32 +96,58 @@
             color: #1a1a1a;
             display: none;
             z-index: 1000;
-            animation: slideIn 0.5s ease-out;
+            animation: slideInNotification 0.5s ease-out, fadeOutNotification 0.5s ease-out 2.5s forwards;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
         }
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+        @keyframes slideInNotification {
+            from { transform: translateX(100%) translateY(-50%); opacity: 0; }
+            to { transform: translateX(0) translateY(-50%); opacity: 1; }
+        }
+        @keyframes fadeOutNotification {
+            from { opacity: 1; transform: translateX(0) translateY(-50%); }
+            to { opacity: 0; transform: translateX(20px) translateY(-50%); }
         }
         .score-bar {
             height: 4px;
             background-color: #3d3d3d;
             border-radius: 2px;
             overflow: hidden;
+            position: relative;
+            overflow: hidden;
         }
         .score-fill {
             height: 100%;
             background-color: #00ff88;
             transition: width 0.3s ease;
+            position: relative;
+            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .score-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            animation: shimmer 2s infinite;
+        }
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
         }
         .stats-card {
             text-align: center;
             padding: 20px;
+            animation-delay: calc(var(--card-index, 0) * 0.1s);
         }
         .stats-value {
             font-size: 28px;
             font-weight: bold;
             color: #00ff88;
             text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+            animation: numberRollup 1s ease-out;
+            position: relative;
         }
         .stats-label {
             color: #a0a0a0;
@@ -106,6 +160,19 @@
             overflow-y: auto;
             border-radius: 8px;
             background-color: #2d2d2d;
+            scrollbar-width: thin;
+            scrollbar-color: #00ff88 #2d2d2d;
+        }
+        .table-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .table-container::-webkit-scrollbar-track {
+            background: #2d2d2d;
+            border-radius: 4px;
+        }
+        .table-container::-webkit-scrollbar-thumb {
+            background: #00ff88;
+            border-radius: 4px;
         }
         .control-panel {
             background-color: #2d2d2d;
@@ -146,6 +213,12 @@
             background-color: #2d2d2d;
             border-radius: 8px;
             margin-bottom: 10px;
+            transition: all 0.3s ease;
+            animation: pulseSignal 2s infinite;
+        }
+        .signal-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(0, 255, 136, 0.15);
         }
         .signal-value {
             font-size: 24px;
@@ -168,7 +241,7 @@
             height: 100%;
             width: var(--trend-width, 50%);
             background-color: var(--trend-color, #00ff88);
-            transition: all 0.3s ease;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .trend-up {
             --trend-color: #00ff88;
@@ -248,7 +321,7 @@
             min-height: 300px;
             width: 100%;
         }
-        /* Welcome Modal Styles */
+        /* Enhanced Welcome Modal Styles */
         .welcome-modal {
             display: none;
             position: fixed;
@@ -259,42 +332,441 @@
             height: 100%;
             background-color: rgba(0, 0, 0, 0.8);
             animation: fadeIn 0.3s ease-out;
+            overflow-y: auto;
+            padding: 20px;
         }
+
         .welcome-modal-content {
             background-color: #2d2d2d;
-            margin: 10% auto;
-            padding: 30px;
+            margin: 20px auto;
+            padding: 25px;
             border-radius: 12px;
             max-width: 600px;
             position: relative;
             animation: slideDown 0.4s ease-out;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         }
+
         .welcome-header {
             color: #00ff88;
             font-size: 24px;
             margin-bottom: 20px;
             font-weight: bold;
+            position: sticky;
+            top: 0;
+            background-color: #2d2d2d;
+            padding: 10px 0;
+            z-index: 1;
         }
+
         .welcome-text {
             color: #ffffff;
             line-height: 1.6;
             margin-bottom: 25px;
+            font-size: 14px;
         }
+
+        .welcome-text ul {
+            padding-left: 20px;
+            margin: 15px 0;
+        }
+
+        .welcome-text li {
+            margin-bottom: 8px;
+        }
+
         .welcome-footer {
             text-align: right;
+            position: sticky;
+            bottom: 0;
+            background-color: #2d2d2d;
+            padding: 15px 0 0 0;
+            margin-top: 20px;
+            box-shadow: 0 -5px 10px rgba(0, 0, 0, 0.1);
         }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+
+        @media (max-width: 768px) {
+            .welcome-modal {
+                padding: 10px;
+            }
+
+            .welcome-modal-content {
+                margin: 10px auto;
+                padding: 20px;
+                max-height: calc(100vh - 20px);
+            }
+
+            .welcome-header {
+                font-size: 20px;
+                padding: 8px 0;
+            }
+
+            .welcome-text {
+                font-size: 13px;
+            }
+
+            .welcome-footer {
+                padding: 10px 0 0 0;
+            }
+
+            .welcome-footer .btn {
+                width: 100%;
+                padding: 10px;
+            }
         }
-        @keyframes slideDown {
-            from { transform: translateY(-100px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+
+        @media (max-height: 600px) {
+            .welcome-modal-content {
+                margin: 10px auto;
+            }
+
+            .welcome-header {
+                font-size: 18px;
+                padding: 5px 0;
+            }
+
+            .welcome-text {
+                font-size: 12px;
+                margin-bottom: 15px;
+            }
+
+            .welcome-text ul {
+                margin: 10px 0;
+            }
+
+            .welcome-text li {
+                margin-bottom: 5px;
+            }
+
+            .welcome-footer {
+                padding: 8px 0 0 0;
+            }
+        }
+
+        /* Custom Scrollbar for Modal */
+        .welcome-modal-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .welcome-modal-content::-webkit-scrollbar-track {
+            background: #1a1a1a;
+            border-radius: 4px;
+        }
+
+        .welcome-modal-content::-webkit-scrollbar-thumb {
+            background: #00ff88;
+            border-radius: 4px;
+        }
+
+        .welcome-modal-content::-webkit-scrollbar-thumb:hover {
+            background: #00cc6a;
+        }
+        /* New Animation and Responsive Enhancements */
+        .stats-value {
+            animation: numberRollup 1s ease-out;
+            position: relative;
+        }
+        @keyframes numberRollup {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .signal-card {
+            transition: all 0.3s ease;
+            animation: pulseSignal 2s infinite;
+        }
+        @keyframes pulseSignal {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        .signal-trend::after {
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .table-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border-radius: 8px;
+            background-color: #2d2d2d;
+            scrollbar-width: thin;
+            scrollbar-color: #00ff88 #2d2d2d;
+        }
+        .table-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .table-container::-webkit-scrollbar-track {
+            background: #2d2d2d;
+            border-radius: 4px;
+        }
+        .table-container::-webkit-scrollbar-thumb {
+            background: #00ff88;
+            border-radius: 4px;
+        }
+        .badge {
+            transition: all 0.3s ease;
+            animation: badgePop 0.3s ease-out;
+        }
+        @keyframes badgePop {
+            0% { transform: scale(0); }
+            70% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        .notification {
+            animation: slideInNotification 0.5s ease-out, fadeOutNotification 0.5s ease-out 2.5s forwards;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        @keyframes slideInNotification {
+            from { transform: translateX(100%) translateY(-50%); opacity: 0; }
+            to { transform: translateX(0) translateY(-50%); opacity: 1; }
+        }
+        @keyframes fadeOutNotification {
+            from { opacity: 1; transform: translateX(0) translateY(-50%); }
+            to { opacity: 0; transform: translateX(20px) translateY(-50%); }
+        }
+        /* Enhanced Responsive Design */
+        @media (max-width: 768px) {
+            .stats-card {
+                margin-bottom: 15px;
+            }
+            .stats-value {
+                font-size: 24px;
+            }
+            .chart-container {
+                height: 250px;
+                margin-bottom: 15px;
+            }
+            .table-responsive {
+                margin: 0 -15px;
+            }
+            .welcome-modal-content {
+                margin: 5% 15px;
+                padding: 20px;
+            }
+            .notification {
+                left: 20px;
+                right: 20px;
+                transform: translateY(-50%);
+            }
+        }
+        @media (max-width: 576px) {
+            .stats-value {
+                font-size: 20px;
+            }
+            .stats-label {
+                font-size: 12px;
+            }
+            .chart-container {
+                height: 200px;
+            }
+            .table th, .table td {
+                padding: 8px;
+                font-size: 14px;
+            }
+            .welcome-modal-content {
+                padding: 15px;
+            }
+            .welcome-header {
+                font-size: 20px;
+            }
+        }
+        /* Enhanced Interactive Elements */
+        .btn-custom {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .btn-custom::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s ease, height 0.6s ease;
+        }
+        .btn-custom:hover::after {
+            width: 300%;
+            height: 300%;
+        }
+        .trader-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .trader-card:hover {
+            transform: translateY(-5px) scale(1.03);
+            box-shadow: 0 8px 25px rgba(0, 255, 136, 0.2);
+        }
+        .score-bar {
+            position: relative;
+            overflow: hidden;
+        }
+        .score-fill {
+            position: relative;
+            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .score-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            animation: shimmer 2s infinite;
+        }
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        /* Enhanced Mobile Compatibility */
+        @media (max-width: 768px) {
+            .container {
+                padding: 5px;
+                max-width: 100%;
+            }
+            
+            h1 {
+                font-size: 20px;
+                margin-bottom: 10px;
+            }
+
+            .row {
+                margin: 0 -5px;
+            }
+
+            .col-md-3, .col-md-4, .col-12 {
+                padding: 0 5px;
+            }
+
+            .card {
+                margin-bottom: 10px;
+            }
+
+            .stats-card {
+                padding: 10px 5px;
+            }
+
+            .stats-value {
+                font-size: 16px;
+                margin-bottom: 2px;
+            }
+
+            .stats-label {
+                font-size: 10px;
+            }
+
+            .chart-container {
+                height: 180px;
+                margin-bottom: 10px;
+            }
+
+            .card-body {
+                padding: 10px 5px;
+            }
+
+            .card-title {
+                font-size: 14px;
+                margin-bottom: 5px;
+            }
+
+            .table-responsive {
+                margin: 0;
+            }
+
+            .table th, .table td {
+                padding: 5px 3px;
+                font-size: 11px;
+            }
+
+            .signal-card {
+                padding: 8px !important;
+            }
+
+            .signal-card h6 {
+                font-size: 12px;
+                margin-bottom: 5px;
+            }
+
+            .signal-value {
+                font-size: 16px;
+                margin: 5px 0;
+            }
+
+            .table-container {
+                max-height: 250px;
+            }
+        }
+
+        /* Compact layout for very small screens */
+        @media (max-width: 360px) {
+            .stats-value {
+                font-size: 14px;
+            }
+
+            .stats-label {
+                font-size: 9px;
+            }
+
+            .chart-container {
+                height: 160px;
+            }
+
+            .table th, .table td {
+                padding: 4px 2px;
+                font-size: 10px;
+            }
+        }
+
+        /* New Trade Count Badge */
+        .new-trades-badge {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #00ff88;
+            color: #1a1a1a;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .new-trades-badge.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        @media (max-width: 576px) {
+            .new-trades-badge {
+                top: auto;
+                bottom: 20px;
+                left: 50%;
+                right: auto;
+                transform: translateX(-50%) translateY(100%);
+                width: 90%;
+                text-align: center;
+            }
+
+            .new-trades-badge.show {
+                transform: translateX(-50%) translateY(0);
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Welcome Modal -->
+    <!-- Welcome Modal with updated structure -->
     <div id="welcomeModal" class="welcome-modal">
         <div class="welcome-modal-content">
             <div class="welcome-header">
@@ -512,6 +984,7 @@
     </div>
 
     <div id="notification" class="notification"></div>
+    <div id="newTradesBadge" class="new-trades-badge"></div>
 
     <script>
         let buySellChart = null;
@@ -552,20 +1025,39 @@
             notification.textContent = message;
             notification.style.backgroundColor = type === 'success' ? '#00ff88' : '#ff4444';
             notification.style.display = 'block';
+            notification.classList.add('animate__animated', 'animate__fadeInRight');
+            
             setTimeout(() => {
-                notification.style.display = 'none';
+                notification.classList.remove('animate__fadeInRight');
+                notification.classList.add('animate__fadeOutRight');
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                    notification.classList.remove('animate__fadeOutRight');
+                }, 500);
             }, 3000);
         }
 
         // Update analytics cards
         function updateAnalytics(analytics) {
-            document.getElementById('totalVolume').textContent = formatCurrency(analytics.total_volume);
-            document.getElementById('totalTrades').textContent = analytics.total_trades;
-            document.getElementById('uniqueTraders').textContent = analytics.unique_traders.size;
-            const avgPrice = analytics.prices.length > 0 
-                ? analytics.prices.reduce((a, b) => a + b) / analytics.prices.length 
-                : 0;
-            document.getElementById('avgPrice').textContent = formatCurrency(avgPrice);
+            const elements = [
+                { id: 'totalVolume', value: formatCurrency(analytics.total_volume) },
+                { id: 'totalTrades', value: analytics.total_trades },
+                { id: 'uniqueTraders', value: analytics.unique_traders.size },
+                { id: 'avgPrice', value: formatCurrency(analytics.prices.length > 0 
+                    ? analytics.prices.reduce((a, b) => a + b) / analytics.prices.length 
+                    : 0) }
+            ];
+
+            elements.forEach((element, index) => {
+                const el = document.getElementById(element.id);
+                el.style.setProperty('--card-index', index);
+                el.classList.add('animate__animated', 'animate__fadeInUp');
+                el.textContent = element.value;
+                
+                setTimeout(() => {
+                    el.classList.remove('animate__animated', 'animate__fadeInUp');
+                }, 1000);
+            });
         }
 
         // Update Buy/Sell chart
@@ -691,8 +1183,10 @@
                 tbody.innerHTML = '';
             }
             
-            trades.forEach(trade => {
+            trades.forEach((trade, index) => {
                 const row = document.createElement('tr');
+                row.style.opacity = '0';
+                row.style.animation = `fadeInUp 0.3s ease-out ${index * 0.05}s forwards`;
                 const amount = (trade.size * trade.price).toFixed(2);
                 row.innerHTML = `
                     <td>${formatDate(trade.timestamp * 1000)}</td>
@@ -862,7 +1356,7 @@
             }
         }
 
-        // Price Trend Chart
+        // Fixed Price Trend Analysis
         function updatePriceTrendChart(trades) {
             const ctx = document.getElementById('priceTrendChart');
             if (!ctx) return;
@@ -875,50 +1369,85 @@
             const oneDayAgo = now - (24 * 60 * 60);
             const recentTrades = sortedTrades.filter(trade => trade.timestamp >= oneDayAgo);
 
-            if (recentTrades.length === 0) return; // Don't update if no recent trades
-
-            // Group trades by hour
+            // Initialize hourly data structure
             const hourlyData = {};
             const currentHour = new Date().getHours();
             
-            // Initialize all 24 hours with null values
+            // Initialize all 24 hours with default values
             for (let i = 0; i < 24; i++) {
                 const hour = (currentHour - i + 24) % 24;
                 hourlyData[hour] = {
-                    total: 0,
-                    count: 0,
-                    volume: 0
+                    prices: [],
+                    volumes: [],
+                    avgPrice: null
                 };
             }
 
-            // Fill in actual data
+            // Process trades into hourly buckets
             recentTrades.forEach(trade => {
-                const hour = new Date(trade.timestamp * 1000).getHours();
-                hourlyData[hour].total += trade.price;
-                hourlyData[hour].count++;
-                hourlyData[hour].volume += trade.size * trade.price;
+                const tradeHour = new Date(trade.timestamp * 1000).getHours();
+                hourlyData[tradeHour].prices.push(trade.price);
+                hourlyData[tradeHour].volumes.push(trade.size * trade.price);
             });
 
-            // Create datasets
+            // Calculate averages and prepare chart data
             const labels = [];
             const prices = [];
             const volumes = [];
+            let lastValidPrice = null;
 
-            // Generate data for the last 24 hours in chronological order
+            // Process last 24 hours in chronological order
             for (let i = 23; i >= 0; i--) {
                 const hour = (currentHour - i + 24) % 24;
                 labels.push(`${hour}:00`);
                 
                 const hourData = hourlyData[hour];
-                if (hourData.count > 0) {
-                    prices.push(hourData.total / hourData.count);
-                    volumes.push(hourData.volume);
+                
+                // Calculate average price for the hour if there are trades
+                if (hourData.prices.length > 0) {
+                    const avgPrice = hourData.prices.reduce((a, b) => a + b) / hourData.prices.length;
+                    lastValidPrice = avgPrice;
+                    prices.push(avgPrice);
+                    volumes.push(hourData.volumes.reduce((a, b) => a + b, 0));
                 } else {
-                    // If no trades in this hour, use the last known price
-                    const lastPrice = prices[prices.length - 1];
-                    prices.push(lastPrice || null);
+                    // Use last known price or 0 if no previous price
+                    prices.push(lastValidPrice !== null ? lastValidPrice : 0);
                     volumes.push(0);
                 }
+            }
+
+            // Ensure we have valid data
+            const hasValidData = prices.some(price => price !== null && price !== 0);
+            if (!hasValidData) {
+                // Display "No Data Available" on the chart
+                if (window.priceTrendChart instanceof Chart) {
+                    window.priceTrendChart.destroy();
+                }
+                
+                window.priceTrendChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['No Data'],
+                        datasets: [{
+                            data: [0],
+                            borderColor: '#00ff88'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            title: {
+                                display: true,
+                                text: 'No Data Available',
+                                color: '#ffffff',
+                                font: { size: 14 }
+                            }
+                        }
+                    }
+                });
+                return;
             }
 
             // Destroy existing chart if it exists
@@ -926,23 +1455,25 @@
                 window.priceTrendChart.destroy();
             }
 
-            // Create new chart
+            // Create new chart with enhanced configuration
             window.priceTrendChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [
                         {
-                            label: 'Average Price',
+                            label: 'Price',
                             data: prices,
                             borderColor: '#00ff88',
                             borderWidth: 2,
                             fill: false,
                             tension: 0.4,
                             yAxisID: 'y',
-                            spanGaps: true,
-                            pointRadius: 3,
-                            pointHoverRadius: 5
+                            pointRadius: window.innerWidth < 768 ? 2 : 3,
+                            pointHoverRadius: window.innerWidth < 768 ? 4 : 5,
+                            pointBackgroundColor: '#00ff88',
+                            pointBorderColor: '#00ff88',
+                            pointHoverBackgroundColor: '#ffffff'
                         },
                         {
                             label: 'Volume',
@@ -950,8 +1481,8 @@
                             type: 'bar',
                             backgroundColor: 'rgba(0, 255, 136, 0.2)',
                             yAxisID: 'y1',
-                            barThickness: 'flex',
-                            maxBarThickness: 20
+                            barThickness: window.innerWidth < 768 ? 'flex' : 20,
+                            maxBarThickness: window.innerWidth < 768 ? 15 : 20
                         }
                     ]
                 },
@@ -965,20 +1496,26 @@
                     plugins: {
                         legend: {
                             display: true,
+                            position: window.innerWidth < 768 ? 'bottom' : 'top',
                             labels: {
                                 color: '#ffffff',
+                                boxWidth: window.innerWidth < 768 ? 8 : 12,
+                                padding: window.innerWidth < 768 ? 8 : 10,
                                 font: {
-                                    size: 12
+                                    size: window.innerWidth < 768 ? 10 : 12
                                 }
                             }
                         },
                         tooltip: {
+                            enabled: true,
+                            mode: 'index',
+                            intersect: false,
                             callbacks: {
                                 label: function(context) {
-                                    if (context.dataset.label === 'Average Price') {
-                                        return `Price: ${formatCurrency(context.raw)}`;
+                                    if (context.dataset.label === 'Price') {
+                                        return `Price: ${formatCurrency(context.raw || 0)}`;
                                     }
-                                    return `Volume: ${formatCurrency(context.raw)}`;
+                                    return `Volume: ${formatCurrency(context.raw || 0)}`;
                                 }
                             }
                         }
@@ -995,7 +1532,11 @@
                                 color: '#ffffff',
                                 callback: function(value) {
                                     return formatCurrency(value);
-                                }
+                                },
+                                font: {
+                                    size: window.innerWidth < 768 ? 9 : 11
+                                },
+                                maxTicksLimit: window.innerWidth < 768 ? 5 : 8
                             }
                         },
                         y1: {
@@ -1009,7 +1550,11 @@
                                 color: '#ffffff',
                                 callback: function(value) {
                                     return formatCurrency(value);
-                                }
+                                },
+                                font: {
+                                    size: window.innerWidth < 768 ? 9 : 11
+                                },
+                                maxTicksLimit: window.innerWidth < 768 ? 5 : 8
                             }
                         },
                         x: {
@@ -1018,9 +1563,24 @@
                             },
                             ticks: {
                                 color: '#ffffff',
-                                maxRotation: 45,
-                                minRotation: 45
+                                maxRotation: window.innerWidth < 768 ? 45 : 0,
+                                minRotation: window.innerWidth < 768 ? 45 : 0,
+                                font: {
+                                    size: window.innerWidth < 768 ? 9 : 11
+                                },
+                                maxTicksLimit: window.innerWidth < 768 ? 8 : 12,
+                                callback: function(value) {
+                                    return labels[value].replace(':00', '');
+                                }
                             }
+                        }
+                    },
+                    layout: {
+                        padding: {
+                            left: window.innerWidth < 768 ? 2 : 5,
+                            right: window.innerWidth < 768 ? 2 : 5,
+                            top: window.innerWidth < 768 ? 2 : 5,
+                            bottom: window.innerWidth < 768 ? 2 : 5
                         }
                     }
                 }
@@ -1075,7 +1635,18 @@
             return { momentum, volume, smartMoney, sentiment };
         }
 
-        // Fetch data
+        // Show new trades notification
+        function showNewTradesNotification(count) {
+            const badge = document.getElementById('newTradesBadge');
+            badge.textContent = `${count} New Trade${count !== 1 ? 's' : ''} Fetched`;
+            badge.classList.add('show');
+            
+            setTimeout(() => {
+                badge.classList.remove('show');
+            }, 3000);
+        }
+
+        // Enhanced fetch data function with trade count notification
         async function fetchData() {
             try {
                 const response = await fetch('/trades');
@@ -1085,10 +1656,17 @@
                     throw new Error('Invalid data format');
                 }
 
+                // Calculate new trades
+                const newTradesCount = data.trades.length;
+                if (newTradesCount > 0) {
+                    showNewTradesNotification(newTradesCount);
+                }
+
                 // Update trades list
+                const previousTradesCount = allTrades.length;
                 allTrades = data.trades.concat(allTrades);
                 allTrades = allTrades.slice(0, 1000); // Keep last 1000 trades
-                
+
                 // Update displayed trades if at top
                 if (displayedTrades === 0) {
                     updateTradesTable(allTrades.slice(0, TRADES_PER_PAGE));
@@ -1232,6 +1810,17 @@
             if (!localStorage.getItem('welcomeModalShown')) {
                 showWelcomeModal();
             }
+        });
+
+        // Add window resize handler for responsive charts
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                if (allTrades.length > 0) {
+                    updatePriceTrendChart(allTrades);
+                }
+            }, 250);
         });
     </script>
 </body>
